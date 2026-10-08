@@ -1,0 +1,85 @@
+Metadata-Version: 2.4
+Name: plasticity3d-jax
+Version: 0.1.0
+Summary: Functional JAX finite elements for small-strain 3D J2 plasticity
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: jax>=0.4.20
+Requires-Dist: meshio>=5.3
+Provides-Extra: test
+Requires-Dist: pytest>=7; extra == "test"
+
+# plasticity3d-jax
+
+A compact, functional finite-element solver for three-dimensional, small-strain
+elasto-plasticity. It uses JAX arrays throughout; material-point states are
+immutable PyTrees, and the constitutive update and element routines compose with
+`jax.jit`, `jax.vmap`, and `jax.jacfwd`.
+
+## Scope and conventions
+
+- Eight-node isoparametric hexahedra with full 2x2x2 Gauss integration.
+- Isotropic linear elasticity and associative von Mises (J2) plasticity with
+  combined linear and saturating isotropic hardening.
+- Small displacements and infinitesimal strain. No geometric nonlinearity,
+  contact, damage, or finite-strain behavior.
+- Engineering-strain Voigt order `[xx, yy, zz, yz, xz, xy]`; stress uses the
+  matching tensor-shear order.
+- Dense global assembly and direct solves are deliberately used to keep the
+  reference implementation transparent. They are suitable for small teaching
+  and verification meshes, not large production jobs.
+- Newton iterations use load increments and commit quadrature history only
+  after each converged increment. A failed increment is reported and later
+  increments are not attempted.
+
+The included tensile-bar and cantilever scripts are small demonstrators. The
+bar has an idealized stepped waist rather than a standards-calibrated notch;
+they are useful smoke tests, not validated design benchmarks.
+
+## Install and test
+
+Python 3.10+ is required.
+
+```powershell
+python -m pip install -e ".[test]"
+python -m pytest
+```
+
+JAX chooses the available backend. For higher precision, enable JAX 64-bit
+mode in the application before constructing arrays:
+
+```python
+import jax
+jax.config.update("jax_enable_x64", True)
+```
+
+## Run examples
+
+```powershell
+python -m plasticity3d_jax.main --benchmark cantilever --steps 8 --output results
+python -m plasticity3d_jax.main --benchmark notched-bar --steps 8 --output results
+```
+
+The solver writes a VTU file readable by ParaView and prints convergence
+information. Mesh and solver APIs are also available directly from the package.
+
+## Minimal functional example
+
+```python
+import jax.numpy as jnp
+from plasticity3d_jax.core.history import zero_history
+from plasticity3d_jax.materials.j2_plasticity_3d import make_material, update
+
+material = make_material(121_000.0, 80_000.0, 250.0, hardening_modulus=1_000.0)
+strain = jnp.array([0.003, 0.0, 0.0, 0.0, 0.0, 0.0])
+stress, new_history = update(strain, zero_history(), material)
+```
+
+All state transitions return new values. No solver routine mutates its input
+arrays or material history. The global solver performs residual-decreasing
+backtracking for each Newton correction; `tolerance` is relative to the initial
+free-DOF residual norm (with a unit lower scale).
+
+For JIT compilation of the global solve, keep loop counts static, e.g.
+`jax.jit(solve, static_argnames=("load_steps", "max_iterations"))(...)`.
+`line_search_steps` is also a static loop count if explicitly overridden.

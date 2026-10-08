@@ -1,0 +1,55 @@
+{
+  "benchmark": "cantilever",
+  "converged": true,
+  "completed_steps": 8,
+  "total_steps": 8,
+  "mesh": {
+    "node_count": 425,
+    "element_count": 256,
+    "element_type": "VTK_HEXAHEDRON (12)",
+    "quadrature_points_per_element": 8
+  },
+  "control": {
+    "axis": "y",
+    "prescribed_displacement": -0.12,
+    "final_reaction_force": -7.009971618652344
+  },
+  "final_converged_step": 8,
+  "final": {
+    "max_displacement": 0.12032908946275711,
+    "max_von_mises_stress": 268.6595153808594,
+    "max_equivalent_plastic_strain": 0.0003731902688741684,
+    "residual_norm": 0.007557235192507505
+  },
+  "peak_von_mises": {
+    "value": 268.6595153808594,
+    "load_step": 8,
+    "element": 1,
+    "gauss_point": 4
+  },
+  "newton_iterations": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    4
+  ],
+  "residual_norm_by_step": [
+    0.000958423363044858,
+    0.0018053727690130472,
+    0.002878981176763773,
+    0.0040585980750620365,
+    0.005882768426090479,
+    0.0057154386304318905,
+    0.0056794616393744946,
+    0.007557235192507505
+  ],
+  "plots": [
+    "cantilever_force_displacement.png",
+    "cantilever_material_response.png",
+    "cantilever_convergence.png"
+  ]
+}
