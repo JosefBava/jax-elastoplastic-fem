@@ -166,13 +166,6 @@ Running the command writes the per-increment load CSV and JSON summary,
 force-displacement and material-response plots, and a final `.vtu` that can be
 opened in ParaView.
 
-**Recommended ParaView view for the README:** open `plate-with-hole.vtu`, color
-the mesh by the cell field `von_mises_stress`, then apply **Warp By Vector**
-using the point field `displacement`. Use a visible displacement scale factor
-(for example, 50) so the deformation can be seen, show the stress color bar,
-and hide element edges for a clean overview. To show the yielded region instead,
-select `equivalent_plastic_strain`. This is the clearest visual for explaining
-the preliminary study, but the coarse mesh makes the contours qualitative.
 
 The mesh-convergence command writes an overlay force-displacement plot,
 combined CSV/JSON summaries, and the detailed outputs for each mesh level in
