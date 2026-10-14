@@ -125,7 +125,7 @@ The run converged at all 12 increments on a mesh with 2,048 HEX8 elements
 | End of compression | -0.10 | -1843.92 | 1956.57 | 0.03413 |
 
 
-<img width="896" height="564" alt="cyclic-bar_force_displacement" src="https://github.com/user-attachments/assets/63fe45dd-9d5a-4809-8b09-52e1008a8bb3" />
+<img width="496" height="258" alt="cyclic-bar_force_displacement" src="https://github.com/user-attachments/assets/63fe45dd-9d5a-4809-8b09-52e1008a8bb3" />
 
 
 Values are in the solver's consistent, user-selected units. They are sample
