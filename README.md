@@ -1,4 +1,4 @@
-# plasticity3d-jax
+# jax_elastoplastic
 
 A compact, functional finite-element solver for three-dimensional, small-strain
 elasto-plasticity. It uses JAX arrays throughout; material-point states are
