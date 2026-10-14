@@ -103,6 +103,9 @@ square outer boundary, and half-thickness symmetry.
 
 ### Cyclic-bar history test
 
+<img width="896" height="348" alt="cyclicbar" src="https://github.com/user-attachments/assets/bfcdba51-5bf9-4bb3-acd2-262accd445c2" />
+
+
 This development test uses four increments per loading leg:
 
 ```powershell
@@ -127,6 +130,9 @@ diagnostic plots, final VTU, and ParaView animation files to the selected
 output directory.
 
 ### Preliminary proof-of-concept study: plate with a circular hole
+
+<img width="897" height="350" alt="plate-wuth-hole" src="https://github.com/user-attachments/assets/2ad9d663-13cf-4d01-a373-17e883c9bd24" />
+
 
 This sample uses the benchmark's default half-thickness model and was run
 with eight displacement increments:
