@@ -103,7 +103,10 @@ square outer boundary, and half-thickness symmetry.
 
 ### Cyclic-bar history test
 
-<img width="896" height="348" alt="cyclicbar" src="https://github.com/user-attachments/assets/bfcdba51-5bf9-4bb3-acd2-262accd445c2" />
+
+<img width="896" height="348" alt="cyclicbar2" src="https://github.com/user-attachments/assets/2232b081-1ee5-4a26-8f6c-12868bd0edd7" />
+
+
 
 
 This development test uses four increments per loading leg:
@@ -120,6 +123,10 @@ The run converged at all 12 increments on a mesh with 2,048 HEX8 elements
 | End of tension | +0.20 | +1022.55 | 1050.78 | 0.01602 |
 | End of unloading | 0.00 | -1433.22 | 1538.15 | 0.02576 |
 | End of compression | -0.10 | -1843.92 | 1956.57 | 0.03413 |
+
+
+<img width="896" height="564" alt="cyclic-bar_force_displacement" src="https://github.com/user-attachments/assets/63fe45dd-9d5a-4809-8b09-52e1008a8bb3" />
+
 
 Values are in the solver's consistent, user-selected units. They are sample
 outputs for this mesh and material configuration, not reference or
