@@ -21,11 +21,11 @@ immutable PyTrees, and the constitutive update and element routines compose with
   after each converged increment. A failed increment is reported and later
   increments are not attempted.
 
-The included benchmark set exercises cyclic plastic history, smooth-notch
-localization, a plate with a circular hole, and mesh sensitivity. These are
-verification examples rather than standards-certified design benchmarks:
-material calibration, mesh refinement studies, and comparison with reference
-solutions are still required before engineering use.
+The included cases are **preliminary proof-of-concept studies**, not
+standards-certified verification benchmarks. The plate with a circular hole is
+the primary visualization example; the cantilever is a basic solver check.
+Other cases are best treated as development studies until their responses have
+been checked against reference solutions and mesh-refinement results.
 
 ## Install and test
 
@@ -55,6 +55,17 @@ python -m plasticity3d_jax.main --benchmark plate-with-hole --steps 8 --output r
 python -m plasticity3d_jax.main --benchmark mesh-convergence --steps 4 --output results
 ```
 
+### How to interpret the example cases
+
+| Case | Suggested role |
+|---|---|
+| Plate with circular hole | Primary preliminary proof-of-concept study: inspect stress localization and the onset of plasticity around the hole. |
+| Cantilever | Basic equilibrium and displacement-control sanity check. |
+| Cyclic bar | Plastic-history and load-reversal development test; its force response needs further investigation before being treated as validated. |
+| Notched bar | Stepped-waist tensile example, not a smooth-notch standard benchmark. Keep as a geometry/stress-localization test. |
+| Smooth-notched bar | More realistic geometry study; treat as preliminary pending mesh and reference comparisons. |
+| Mesh convergence | Demonstration of comparing meshes, not proof of convergence with the current modest default levels. |
+
 Each single-mesh benchmark writes result files under the selected output
 directory:
 
@@ -80,10 +91,75 @@ are also available directly from the package.
 The cyclic-bar `--steps` value is the number of increments on each of three
 linear legs: tension to `+0.2`, unloading to `0`, and compression to `-0.1`.
 It uses an absolute displacement history, so both unloading and reversal
-preserve the converged plastic state from the previous increment. The
+preserve the converged plastic state from the previous increment. In addition
+to the final `.vtu`, this benchmark writes
+`cyclic-bar_animation.pvd` and one `.vtu` frame per converged increment. Open
+the `.pvd` file in ParaView and use its time controls to animate the cycle.
+Each frame includes the displacement vector/magnitude, stress and plastic
+fields, plus a `prescribed_displacement` point scalar. The
 smooth-notched bar uses an analytically curved circular cross-section and
 one-eighth symmetry. The plate-with-hole mesh uses a mapped circular bore,
 square outer boundary, and half-thickness symmetry.
+
+### Cyclic-bar history test
+
+This development test uses four increments per loading leg:
+
+```powershell
+python -m plasticity3d_jax.main --benchmark cyclic-bar --steps 4 --output results
+```
+
+The run converged at all 12 increments on a mesh with 2,048 HEX8 elements
+(2,673 nodes). Selected results from the load history:
+
+| Load point | Prescribed displacement | Loaded-face reaction | Peak von Mises stress | Peak equivalent plastic strain |
+|---|---:|---:|---:|---:|
+| End of tension | +0.20 | +1022.55 | 1050.78 | 0.01602 |
+| End of unloading | 0.00 | -1433.22 | 1538.15 | 0.02576 |
+| End of compression | -0.10 | -1843.92 | 1956.57 | 0.03413 |
+
+Values are in the solver's consistent, user-selected units. They are sample
+outputs for this mesh and material configuration, not reference or
+standards-calibrated results. In particular, use the cyclic response to inspect
+history tracking, not as evidence of a validated force-displacement curve.
+Running the command writes the full per-increment CSV and JSON summary,
+diagnostic plots, final VTU, and ParaView animation files to the selected
+output directory.
+
+### Preliminary proof-of-concept study: plate with a circular hole
+
+This sample uses the benchmark's default half-thickness model and was run
+with eight displacement increments:
+
+```powershell
+python -m plasticity3d_jax.main --benchmark plate-with-hole --steps 8 --output results
+```
+
+All 8 increments converged. The mesh contains 32 HEX8 elements and 96 nodes;
+the plate width is 4.0, thickness is 0.5, hole radius is 0.5, and the
+right-edge displacement reaches `+0.01`.
+
+| Load point | Prescribed displacement | Loaded-edge reaction | Peak von Mises stress | Peak equivalent plastic strain |
+|---|---:|---:|---:|---:|
+| Initial yield/localization | 0.00375 | 171.67 | 268.24 | 0.000365 |
+| Mid-loading | 0.00625 | 226.54 | 337.00 | 0.001740 |
+| Final | 0.01000 | 268.55 | 421.77 | 0.003435 |
+
+The first two increments remained elastic in this run; plastic strain first
+became nonzero at the third increment near the hole. This is an illustrative
+coarse-mesh result, not a stress-concentration reference solution or a
+mesh-converged prediction. Units follow the material and geometry inputs.
+Running the command writes the per-increment load CSV and JSON summary,
+force-displacement and material-response plots, and a final `.vtu` that can be
+opened in ParaView.
+
+**Recommended ParaView view for the README:** open `plate-with-hole.vtu`, color
+the mesh by the cell field `von_mises_stress`, then apply **Warp By Vector**
+using the point field `displacement`. Use a visible displacement scale factor
+(for example, 50) so the deformation can be seen, show the stress color bar,
+and hide element edges for a clean overview. To show the yielded region instead,
+select `equivalent_plastic_strain`. This is the clearest visual for explaining
+the preliminary study, but the coarse mesh makes the contours qualitative.
 
 The mesh-convergence command writes an overlay force-displacement plot,
 combined CSV/JSON summaries, and the detailed outputs for each mesh level in

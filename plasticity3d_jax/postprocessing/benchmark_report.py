@@ -11,6 +11,7 @@ from plasticity3d_jax.postprocessing.benchmark_plots import write_benchmark_plot
 from plasticity3d_jax.postprocessing.vtk_export import (
     von_mises_stress,
     write_vtu,
+    write_vtk_series,
 )
 
 
@@ -130,6 +131,18 @@ def write_benchmark_outputs(
     }
 
     write_vtu(str(output_dir / f"{benchmark_name}.vtu"), mesh, result, final_index)
+    if control_displacement_history is not None:
+        animation_path = write_vtk_series(
+            output_dir / f"{benchmark_name}_animation.pvd",
+            mesh,
+            result,
+            control_displacement_history,
+        )
+        summary["vtk_animation"] = {
+            "collection": animation_path.name,
+            "frames": int(np.sum(converged)),
+            "format": "ParaView PVD collection",
+        }
     json_path = output_dir / f"{benchmark_name}_summary.json"
     with json_path.open("w", encoding="utf-8") as stream:
         json.dump(summary, stream, indent=2, allow_nan=False)

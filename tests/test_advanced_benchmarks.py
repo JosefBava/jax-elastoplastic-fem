@@ -1,6 +1,8 @@
 import csv
+import xml.etree.ElementTree as ET
 
 import jax.numpy as jnp
+import meshio
 
 from plasticity3d_jax.benchmarks import cyclic_bar_3d
 from plasticity3d_jax.benchmarks.smooth_notched_bar_3d import (
@@ -24,7 +26,7 @@ def test_cyclic_bar_tracks_tension_unloading_and_compression(tmp_path):
     )
     assert mesh.connectivity.shape[0] > 0
     controlled_dofs, axis = cyclic_bar_3d.loading_dofs(mesh)
-    write_benchmark_outputs(
+    summary = write_benchmark_outputs(
         tmp_path,
         "cyclic",
         mesh,
@@ -34,6 +36,8 @@ def test_cyclic_bar_tracks_tension_unloading_and_compression(tmp_path):
         axis,
         control_displacement_history=path,
     )
+    assert summary["vtk_animation"]["collection"] == "cyclic_animation.pvd"
+    assert summary["vtk_animation"]["frames"] == 3
     with (tmp_path / "cyclic_load_curve.csv").open(
         newline="", encoding="utf-8"
     ) as stream:
@@ -44,6 +48,22 @@ def test_cyclic_bar_tracks_tension_unloading_and_compression(tmp_path):
     assert jnp.allclose(
         jnp.asarray(recorded_path), jnp.array([0.2, 0.0, -0.1])
     )
+    animation = tmp_path / "cyclic_animation.pvd"
+    assert animation.is_file()
+    frames = ET.parse(animation).findall(".//DataSet")
+    assert len(frames) == 3
+    assert [frame.attrib["timestep"] for frame in frames] == ["0", "1", "2"]
+    end_node = int(jnp.argmax(mesh.coordinates[:, 0]))
+    for frame, expected_displacement in zip(frames, recorded_path):
+        vtk_frame = meshio.read(tmp_path / frame.attrib["file"])
+        assert jnp.isclose(
+            vtk_frame.point_data["displacement"][end_node, 0],
+            expected_displacement,
+        )
+        assert jnp.allclose(
+            vtk_frame.point_data["prescribed_displacement"],
+            expected_displacement,
+        )
 
 
 def test_smooth_notch_mesh_is_conforming_and_has_positive_element_response():

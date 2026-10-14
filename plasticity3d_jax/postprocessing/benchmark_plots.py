@@ -41,8 +41,8 @@ def write_benchmark_plots(csv_path: Path, output_dir: Path,
     axis.plot(displacement, force, marker="o", linewidth=2)
     axis.set(
         title=f"{benchmark_name}: reaction vs prescribed displacement",
-        xlabel="Prescribed displacement magnitude",
-        ylabel="Loaded-face reaction force magnitude",
+        xlabel="Prescribed displacement",
+        ylabel="Loaded-face reaction force",
     )
     axis.grid(True, alpha=0.3)
     figure.savefig(force_path, dpi=180)
@@ -55,12 +55,14 @@ def write_benchmark_plots(csv_path: Path, output_dir: Path,
     x = displacement
     stress_axis.plot(x, peak_stress, color="tab:red", marker="o", linewidth=2)
     stress_axis.set_ylabel("Peak von Mises stress")
-    stress_axis.set_title(f"{benchmark_name}: peak material response")
+    stress_axis.set_title(
+        f"{benchmark_name}: peak material response vs prescribed displacement"
+    )
     stress_axis.grid(True, alpha=0.3)
     plastic_axis.plot(
         x, peak_plastic_strain, color="tab:purple", marker="s", linewidth=2
     )
-    plastic_axis.set_xlabel("Prescribed displacement magnitude")
+    plastic_axis.set_xlabel("Prescribed displacement")
     plastic_axis.set_ylabel("Peak equivalent plastic strain")
     plastic_axis.grid(True, alpha=0.3)
     figure.savefig(response_path, dpi=180)

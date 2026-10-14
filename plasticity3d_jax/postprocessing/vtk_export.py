@@ -1,5 +1,8 @@
 """Write HEX8 results with nodal and cell fields for ParaView."""
 
+from pathlib import Path
+import xml.etree.ElementTree as ET
+
 import meshio
 import numpy as np
 
@@ -36,7 +39,8 @@ def _last_converged_index(result: SolveResult) -> int:
 
 
 def write_vtu(path: str, mesh: Mesh, result: SolveResult,
-              step_index: int | None = None) -> None:
+              step_index: int | None = None,
+              prescribed_displacement: float | None = None) -> None:
     """Write nodal displacement and Gauss-averaged stress/plastic fields.
 
     Stress invariant values are averaged from the individual integration
@@ -73,20 +77,101 @@ def write_vtu(path: str, mesh: Mesh, result: SolveResult,
     }.items():
         cell_data[f"stress_{label}"] = [cell_stress[:, i, j]]
 
+    field_data = {
+        "load_step": np.asarray([step_index + 1], dtype=np.int32),
+        "load_fraction": np.asarray(
+            [(step_index + 1) / result.load_displacement.shape[0]],
+            dtype=np.float64,
+        ),
+    }
+    if prescribed_displacement is not None:
+        field_data["prescribed_displacement"] = np.asarray(
+            [prescribed_displacement], dtype=np.float64
+        )
+
+    point_data = {
+        "displacement": displacement,
+        "displacement_magnitude": displacement_magnitude,
+    }
+    if prescribed_displacement is not None:
+        point_data["prescribed_displacement"] = np.full(
+            displacement.shape[0], prescribed_displacement, dtype=np.float64
+        )
+
     output = meshio.Mesh(
         points=np.asarray(mesh.coordinates),
         cells=[("hexahedron", np.asarray(mesh.connectivity, dtype=np.int32))],
-        point_data={
-            "displacement": displacement,
-            "displacement_magnitude": displacement_magnitude,
-        },
+        point_data=point_data,
         cell_data=cell_data,
-        field_data={
-            "load_step": np.asarray([step_index + 1], dtype=np.int32),
-            "load_fraction": np.asarray(
-                [(step_index + 1) / result.load_displacement.shape[0]],
-                dtype=np.float64,
-            ),
-        },
+        field_data=field_data,
     )
     meshio.write(path, output, file_format="vtu")
+
+
+def write_vtk_series(
+    path: str | Path,
+    mesh: Mesh,
+    result: SolveResult,
+    prescribed_displacement_history=None,
+) -> Path:
+    """Write converged load steps and a ParaView PVD animation collection."""
+    collection_path = Path(path)
+    if collection_path.suffix.lower() != ".pvd":
+        raise ValueError("VTK animation collection path must use the .pvd suffix.")
+    step_count = result.load_displacement.shape[0]
+    converged = np.asarray(result.load_converged, dtype=bool)
+    if converged.shape != (step_count,):
+        raise ValueError("Load convergence flags do not match the displacement history.")
+    frame_indices = np.flatnonzero(converged)
+    if frame_indices.size == 0:
+        raise ValueError("Cannot write a VTK animation without a converged load step.")
+    if prescribed_displacement_history is None:
+        displacement_history = np.full(frame_indices.size, np.nan)
+    else:
+        displacement_history = np.asarray(
+            prescribed_displacement_history, dtype=np.float64
+        ).reshape(-1)
+        if displacement_history.shape != (step_count,):
+            raise ValueError(
+                "prescribed_displacement_history must contain one value per load step."
+            )
+        if not np.all(np.isfinite(displacement_history[frame_indices])):
+            raise ValueError("Prescribed displacement history must be finite.")
+
+    collection_path.parent.mkdir(parents=True, exist_ok=True)
+    root = ET.Element(
+        "VTKFile",
+        type="Collection",
+        version="0.1",
+        byte_order="LittleEndian",
+    )
+    collection = ET.SubElement(root, "Collection")
+    for frame_number, step_index in enumerate(frame_indices, start=1):
+        frame_name = (
+            f"{collection_path.stem}_step_{step_index + 1:04d}.vtu"
+        )
+        frame_path = collection_path.parent / frame_name
+        frame_displacement = (
+            None
+            if prescribed_displacement_history is None
+            else float(displacement_history[frame_number - 1])
+        )
+        write_vtu(
+            str(frame_path),
+            mesh,
+            result,
+            int(step_index),
+            prescribed_displacement=frame_displacement,
+        )
+        ET.SubElement(
+            collection,
+            "DataSet",
+            timestep=str(frame_number - 1),
+            group="",
+            part="0",
+            file=frame_name,
+        )
+    ET.ElementTree(root).write(
+        collection_path, encoding="utf-8", xml_declaration=True
+    )
+    return collection_path

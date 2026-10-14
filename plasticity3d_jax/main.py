@@ -22,7 +22,7 @@ def main():
             "cantilever", "notched-bar", "cyclic-bar", "smooth-notched-bar",
             "plate-with-hole", "mesh-convergence",
         ),
-        default="cyclic-bar",
+        default="mesh-convergence",
     )
     parser.add_argument("--steps", type=int, default=8)
     parser.add_argument("--output", type=Path, default=Path("results"))
@@ -78,6 +78,8 @@ def main():
         f"{summary['final']['max_equivalent_plastic_strain']:.6g}, "
         f"output={args.output}, plots={', '.join(summary['plots'])}"
     )
+    if "vtk_animation" in summary:
+        print(f"VTK animation: {args.output / summary['vtk_animation']['collection']}")
     if not summary["converged"]:
         raise SystemExit(
             "Nonlinear solve did not converge; see the per-step CSV and JSON summary."
